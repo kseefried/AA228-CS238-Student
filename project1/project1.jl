@@ -21,6 +21,9 @@ function compute(infile, outfile)
     # FEEL FREE TO CHANGE ANYTHING ANYWHERE IN THE CODE
     # THIS INCLUDES CHANGING THE FUNCTION NAMES, MAKING THE CODE MODULAR, BASICALLY ANYTHING
 
+
+# hello this is going to be very sad 
+
 end
 
 if length(ARGS) != 2
