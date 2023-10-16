@@ -21,8 +21,32 @@ function compute(infile, outfile)
     # FEEL FREE TO CHANGE ANYTHING ANYWHERE IN THE CODE
     # THIS INCLUDES CHANGING THE FUNCTION NAMES, MAKING THE CODE MODULAR, BASICALLY ANYTHING
 
+    function bayesian_score_component(M,alpha)
+        # need loggamma function to do this (from SpecialFunctions.jl)
+        p = sum(loggamma.(alpha + M))
+        p -= sum(loggamma.(alpha))
+        p += sum(loggamma.(sum(alpha,dims=2)))
+        p-= sum(loggamma.(sum(alpha,dims=2)+sum(M,dims=2)))
+    end 
 
-# hello this is going to be very sad 
+    function bayesian_score(vars, G, D)
+        n = length(vars)
+        M = statistics(vars, G, D)
+        alpha = prior(vars, G)
+        return sum(bayesian_score_component(M[i],alpha[i]) for i in 1:n)
+    end 
+
+    struct K2search
+        ordering::Vector{Int}
+    end 
+
+    function fit(method::K2Search, vars, D)
+        G = SimpleDiGraph(length(vars))
+        for (k,i) in enumerate(method.ordering[2:end])
+            y = bayesian_score(vars, G, D)
+            for j in method.ordering[1:k]
+
+    end 
 
 end
 
