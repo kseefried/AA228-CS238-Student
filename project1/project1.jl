@@ -7,33 +7,9 @@ using TikzGraphs
 using TikzPictures
 using CSV
 
-"""
-    write_gph(dag::DiGraph, idx2names, filename)
-
-Takes a DiGraph, a Dict of index to names and a output filename to write the graph in `gph` format.
-"""
-function write_gph(dag::DiGraph, idx2names, filename)
-    open(filename, "w") do io
-        for edge in edges(dag)
-            @printf(io, "%s,%s\n", idx2names[src(edge)], idx2names[dst(edge)])
-        end
-    end
-end
-
 struct Variable
     name::Symbol
     r::Int # number of possible values 
-end 
-
-function extract_data(filename)
-    # takes in a file name 
-    # extracts the variable names and the data structure 
-    data = CSV.File(filename) |> DataFrame
-    df = DataFrame(data)
-    vars = df[1,:]
-    D = df[2:end,:]
-    return vars
-    return D
 end 
 
 function sub2ind(siz, x)
@@ -41,8 +17,7 @@ function sub2ind(siz, x)
     return dot(k, x .-1) + 1
 end 
 
-# extracts statistics or counts from a discrete data set Dict
-# Define all functions before, then run functions that calls functions
+# Extracts statistics and counts from a discrete data set Dict
 function statistics(vars, G,D::Matrix{Int})
     n = size(D,1) 
     r = [vars[i].r for i in 1:n]
@@ -72,14 +47,13 @@ end
 
 # Calculate Bayesian Score Component
 function bayesian_score_component(M,alpha)
-    # need loggamma function to do this (from SpecialFunctions.jl)
     p = sum(loggamma.(alpha + M))
     p -= sum(loggamma.(alpha))
     p += sum(loggamma.(sum(alpha,dims=2)))
     p-= sum(loggamma.(sum(alpha,dims=2)+sum(M,dims=2)))
 end 
 
-# Calculate total bayesian score
+# Calculate Total Bayesian Score
 function bayesian_score(vars, G, D)
     n = length(vars)
     M = statistics(vars, G, D)
@@ -87,11 +61,7 @@ function bayesian_score(vars, G, D)
     return sum(bayesian_score_component(M[i],alpha[i]) for i in 1:n)
 end 
 
-# Using K2 search to find the structure of the data 
-# come up with a search method to find the underlying 
-# stores the best graph so far after so many iterations, keep track
-
-struct K2search
+struct K2Search
     ordering::Vector{Int}
 end 
 
@@ -120,9 +90,46 @@ function fit(method::K2Search, vars, D)
     return G
 end 
 
+# Takes a DiGraph, a Dict of index to names and a output filename to write the graph in `gph` format.
+function write_gph(dag::DiGraph, idx2names, filename)
+    open(filename, "w") do io
+        for edge in edges(dag)
+            @printf(io, "%s,%s\n", idx2names[src(edge)], idx2names[dst(edge)])
+        end
+    end
+end
 
-function compute(infile, outfile)
-    extract_data(infile)
+function compute(infile, outfile1, outfile2)  
+        # Get data from CSV file and put it into Variable with a name and max possible number
+        data = CSV.File(filename) |> DataFrame
+        variables = df[1,:]
+        D = df[2:end,:]
+        x = length(variables)
+        vars = Variable[]
+        for h in 1:x
+            vals = D[:,h]
+            max_val = maximum(vals)
+            append = Variable(variables[h],max)
+            push!(vars, append)
+        end 
+        fit(method::K2Search,vars,D)
+        score = bayesian_score(vars,G,D)
+        println(score)
+        write_gph(G,idxenames,outfile1)
+        
+end 
+
+inputfilename = "small.csv"
+outputfilename1 = "small.gph"
+outputfilename3 = "small.pdf"
+
+@time begin
+compute(inputfilename, outputfilename1,outputfile2)
+end 
+
+# Using K2 search to find the structure of the data 
+# come up with a search method to find the underlying 
+# stores the best graph so far after so many iterations, keep track
 # define variable struct
 # need csv file variables 
 # need values taken on my the values 
@@ -132,21 +139,6 @@ function compute(infile, outfile)
 # more creative -- different types of searches
 # -- tweak things, inject randomness
 # check bayesian score calculation using the example 
-
 # how to print out graph
-
 # need bayesian score, .gph, and .pdf 
-    
-end
-
-if length(ARGS) != 2
-    error("usage: julia project1.jl <infile>.csv <outfile>.gph")
-end
-
-inputfilename = ARGS[1]
-outputfilename = ARGS[2]
-
-
 # Function to write the image of parents 
-
-compute(inputfilename, outputfilename)
