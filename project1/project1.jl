@@ -70,11 +70,13 @@ function fit(method::K2Search, vars, D)
     for (k,i) in enumerate(method.ordering[2:end])
         y = bayesian_score(vars, G, D)
         while true 
+            y_best, j_best = -Inf, 0
             for j in method.ordering[1:k]
                 if !has_edge(G, j, i)
-                    y' = bayseian_score(vars, G, D)
-                    if y' > y_best
-                        y_best, j_best = y', j
+                    add_edge!(G,j,i)
+                    y_1 = bayesian_score(vars, G, D)
+                    if y_1 > y_best
+                        y_best, j_best = y_1, j
                     end 
                     rem_edge!(G, j, i) 
                 end 
@@ -99,32 +101,34 @@ function write_gph(dag::DiGraph, idx2names, filename)
     end
 end
 
-function compute(infile, outfile1, outfile2)  
+function compute(infile, outfile1)  
         # Get data from CSV file and put it into Variable with a name and max possible number
-        data = CSV.File(filename) |> DataFrame
-        variables = df[1,:]
-        D = df[2:end,:]
-        x = length(variables)
+        data = CSV.File(infile) |> DataFrame
+        names = data[1,:]
+        D = data[2:end,:]
+        x = length(names)
         vars = Variable[]
+
+        # Add all variable names and maximum values to vars
         for h in 1:x
             vals = D[:,h]
             max_val = maximum(vals)
-            append = Variable(variables[h],max)
+            append = Variable(Symbol(names[h]),max_val)
             push!(vars, append)
         end 
+
+        # Run K2 search using extracted data, calculate Bayesian score, write .gph
         fit(method::K2Search,vars,D)
         score = bayesian_score(vars,G,D)
         println(score)
-        write_gph(G,idxenames,outfile1)
-        
+        write_gph(G,idxenames,outfile1)     
 end 
 
-inputfilename = "small.csv"
+inputfilename = "data/small.csv"
 outputfilename1 = "small.gph"
-outputfilename3 = "small.pdf"
 
 @time begin
-compute(inputfilename, outputfilename1,outputfile2)
+compute(inputfilename, outputfilename1)
 end 
 
 # Using K2 search to find the structure of the data 
