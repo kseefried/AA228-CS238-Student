@@ -104,7 +104,7 @@ end
 function compute(infile, outfile1)  
         # Get data from CSV file and put it into Variable with a name and max possible number
         data = CSV.File(infile) |> DataFrame
-        names = data[1,:]
+        cols = names(data)
         D = data[2:end,:]
         x = length(names)
         vars = Variable[]
